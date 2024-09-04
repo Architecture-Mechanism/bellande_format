@@ -21,10 +21,10 @@ bellande_formatter.write_bellande(data_to_write, "path/to/output/file.bellande")
 - `$ pip install --upgrade bellande_format`
 
 ```
-Name: bellande_robot_step
-Version: 0.3.0
-Summary: Computes the next step towards a target node
-Home-page: github.com/RonaldsonBellande/bellande_robot_step
+Name: bellande_format
+Version: 0.1.0
+Summary: File type Formats
+Home-page: github.com/RonaldsonBellande/bellande_format
 Author: Ronaldson Bellande
 Author-email: ronaldsonbellande@gmail.com
 License: GNU General Public License v3.0
