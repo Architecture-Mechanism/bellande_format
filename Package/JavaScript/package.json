@@ -1,0 +1,19 @@
+{
+  "name": "bellande_format",
+  "version": "0.1.1",
+  "description": "File type Formats",
+  "main": "src/bellande_parser.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/RonaldsonBellande/bellande_format"
+  },
+  "keywords": [
+    "Bellande",
+    "Format"
+  ],
+  "author": "Ronaldson Bellande",
+  "license": "GNU General Public License v3.0"
+}
