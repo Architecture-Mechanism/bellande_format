@@ -46,5 +46,13 @@ projects:
       team_size: 3
 ```
 
+
+## Python Installation
+- https://github.com/RonaldsonBellande/bellande_format/tree/main/Package/Python
+
+## JavaScript Installation
+- https://github.com/RonaldsonBellande/bellande_format/tree/main/Package/JavaScript
+
+
 ## License
 This Algorithm or Models is distributed under the [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/), see [LICENSE](https://github.com/RonaldsonBellande/bellande_format/blob/main/LICENSE) and [NOTICE](https://github.com/RonaldsonBellande/bellande_format/blob/main/LICENSE) for more information.
