@@ -1,24 +1,24 @@
-# Bellande Format Python Example
+# Bellande Format JavaScript Example
 
 ```
-bellande_formatter = Bellande_Format()
+// Example usage
+const bellandeFormatter = new BellandeFormat();
 
-# Parse a Bellande file
-parsed_data = bellande_formatter.parse_bellande("path/to/your/file.bellande")
+// Parse a Bellande file
+const parsedData = bellandeFormatter.parseBellande('path/to/your/file.bellande');
+console.log(parsedData);
 
-# Write data to a Bellande file
-data_to_write = {"key": "value", "list": [1, 2, 3]}
-bellande_formatter.write_bellande(data_to_write, "path/to/output/file.bellande")
+// Write data to a Bellande file
+const dataToWrite = { key: 'value', list: [1, 2, 3] };
+bellandeFormatter.writeBellande(dataToWrite, 'path/to/output/file.bellande');
 ```
 
-## Website PYPI
-- https://pypi.org/project/bellande_format
+## Website NPM
+- https://www.npmjs.com/package/bellande_format
 
 ### Installation
-- `$ pip install bellande_format`
+- `npm i bellande_format`
 
-### Upgrade (if not upgraded)
-- `$ pip install --upgrade bellande_format`
 
 ```
 Name: bellande_format
