@@ -1,5 +1,4 @@
 publish.sh
-src
 tests
 setup.py
 dist
