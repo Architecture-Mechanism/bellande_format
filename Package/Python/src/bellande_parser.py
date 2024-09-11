@@ -102,18 +102,18 @@ class Bellande_Format:
             return str(data).lower()
         else:
             return str(data)
-    
+
     def write_bellande(self, data: Any, file_path: str):
         with open(file_path, 'w') as file:
             file.write(self.to_bellande_string(data))
-
+    
     def to_bellande_string(self, data: Any, indent: int = 0) -> str:
         if isinstance(data, dict):
             lines = []
             for key, value in data.items():
                 if isinstance(value, (dict, list)):
                     lines.append(f"{' ' * indent}{key}:")
-                    lines.append(self.to_bellande_string(value, indent + 4))
+                    lines.append(self.to_bellande_string(value, indent + 2))
                 else:
                     lines.append(f"{' ' * indent}{key}: {self.format_value(value)}")
             return '\n'.join(lines)
@@ -121,8 +121,9 @@ class Bellande_Format:
             lines = []
             for item in data:
                 if isinstance(item, dict):
-                    lines.append(f"{' ' * indent}-")
-                    lines.append(self.to_bellande_string(item, indent + 4))
+                    dict_lines = self.to_bellande_string(item, indent + 2).split('\n')
+                    lines.append(f"{' ' * indent}- {dict_lines[0]}")
+                    lines.extend(dict_lines[1:])
                 else:
                     lines.append(f"{' ' * indent}- {self.format_value(item)}")
             return '\n'.join(lines)
