@@ -28,7 +28,7 @@ enum BellandeValue {
     Map(HashMap<String, BellandeValue>),
 }
 
-struct BellandeFormat;
+pub struct BellandeFormat;
 
 impl BellandeFormat {
     pub fn parse_bellande<P: AsRef<Path>>(
@@ -42,10 +42,8 @@ impl BellandeFormat {
     }
 
     fn parse_lines(&self, lines: &[&str]) -> BellandeValue {
-        let mut result = HashMap::new();
-        let mut current_key = String::new();
-        let mut current_list: Option<Vec<BellandeValue>> = None;
-        let mut indent_stack = vec![(0, &mut result)];
+        let mut root = BellandeValue::Map(HashMap::new());
+        let mut stack: Vec<(usize, String)> = vec![(0, String::new())];
 
         for line in lines {
             let stripped = line.trim();
@@ -53,11 +51,14 @@ impl BellandeFormat {
                 continue;
             }
 
-            let indent = line.len() - line.trim_start().len();
+            let indent = line.len() - stripped.len();
 
-            while indent_stack.last().map_or(false, |&(i, _)| indent <= i) {
-                indent_stack.pop();
-                current_list = None;
+            while let Some(&(last_indent, _)) = stack.last() {
+                if indent <= last_indent {
+                    stack.pop();
+                } else {
+                    break;
+                }
             }
 
             if let Some(colon_pos) = stripped.find(':') {
@@ -65,56 +66,62 @@ impl BellandeFormat {
                 let key = key.trim().to_string();
                 let value = value[1..].trim();
 
-                current_key = key.clone();
                 if !value.is_empty() {
                     let parsed_value = self.parse_value(value);
-                    indent_stack.last_mut().unwrap().1.insert(key, parsed_value);
+                    self.insert_value(&mut root, &stack, &key, parsed_value);
                 } else {
-                    let new_list = Vec::new();
-                    indent_stack
-                        .last_mut()
-                        .unwrap()
-                        .1
-                        .insert(key, BellandeValue::List(new_list));
-                    if let BellandeValue::List(list) = indent_stack
-                        .last_mut()
-                        .unwrap()
-                        .1
-                        .get_mut(&current_key)
-                        .unwrap()
-                    {
-                        current_list = Some(list);
-                        indent_stack.push((indent, list));
-                    }
+                    let new_list = BellandeValue::List(Vec::new());
+                    self.insert_value(&mut root, &stack, &key, new_list);
+                    stack.push((indent, key));
                 }
             } else if stripped.starts_with('-') {
                 let value = stripped[1..].trim();
                 let parsed_value = self.parse_value(value);
-                if let Some(list) = &mut current_list {
-                    list.push(parsed_value);
-                } else {
-                    let mut new_list = Vec::new();
-                    new_list.push(parsed_value);
-                    indent_stack
-                        .last_mut()
-                        .unwrap()
-                        .1
-                        .insert(current_key.clone(), BellandeValue::List(new_list));
-                    if let BellandeValue::List(list) = indent_stack
-                        .last_mut()
-                        .unwrap()
-                        .1
-                        .get_mut(&current_key)
-                        .unwrap()
-                    {
-                        current_list = Some(list);
-                        indent_stack.push((indent, list));
-                    }
+                if let Some((_, key)) = stack.last() {
+                    self.append_to_list(&mut root, &stack, key, parsed_value);
                 }
             }
         }
 
-        BellandeValue::Map(result)
+        root
+    }
+
+    fn insert_value(
+        &self,
+        root: &mut BellandeValue,
+        stack: &[(usize, String)],
+        key: &str,
+        value: BellandeValue,
+    ) {
+        let mut current = root;
+        for (_, path_key) in stack.iter().skip(1) {
+            if let BellandeValue::Map(map) = current {
+                current = map.get_mut(path_key).unwrap();
+            }
+        }
+        if let BellandeValue::Map(map) = current {
+            map.insert(key.to_string(), value);
+        }
+    }
+
+    fn append_to_list(
+        &self,
+        root: &mut BellandeValue,
+        stack: &[(usize, String)],
+        key: &str,
+        value: BellandeValue,
+    ) {
+        let mut current = root;
+        for (_, path_key) in stack.iter().skip(1) {
+            if let BellandeValue::Map(map) = current {
+                current = map.get_mut(path_key).unwrap();
+            }
+        }
+        if let BellandeValue::Map(map) = current {
+            if let Some(BellandeValue::List(list)) = map.get_mut(key) {
+                list.push(value);
+            }
+        }
     }
 
     fn parse_value(&self, value: &str) -> BellandeValue {
