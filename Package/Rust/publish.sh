@@ -1,2 +1,0 @@
-cargo package
-cargo publish
