@@ -1,0 +1,13 @@
+[package]
+name = "bellande_parser"
+version = "0.0.1"
+edition = "2021"
+authors = ["Ronaldson Bellande ronaldsonbellande@gmail.com"]
+description = "Bellande File Format"
+license = "GNU"
+
+[lib]
+path = "bellande_parser.rs"
+
+[dependencies]
+std = { version = "1.65", features = ["collections", "fs", "path"] }
