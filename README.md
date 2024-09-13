@@ -54,7 +54,7 @@ projects:
 - https://github.com/RonaldsonBellande/bellande_format/tree/main/Package/JavaScript
 
 ## Rust Installation
-- https://github.com/RonaldsonBellande/bellande_format/tree/main/Package/JavaScript
+- https://github.com/RonaldsonBellande/bellande_format/tree/main/Package/Rust
 
 
 ## License
