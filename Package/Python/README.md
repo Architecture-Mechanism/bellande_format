@@ -1,6 +1,8 @@
 # Bellande Format Python Example
 
 ```
+from bellande_format import Bellande_Format
+
 bellande_formatter = Bellande_Format()
 
 # Parse a Bellande file
@@ -22,14 +24,11 @@ bellande_formatter.write_bellande(data_to_write, "path/to/output/file.bellande")
 
 ```
 Name: bellande_format
-Version: 0.1.0
 Summary: File type Formats
 Home-page: github.com/RonaldsonBellande/bellande_format
 Author: Ronaldson Bellande
 Author-email: ronaldsonbellande@gmail.com
 License: GNU General Public License v3.0
-Requires: numpy
-Required-by:
 ```
 
 ## License

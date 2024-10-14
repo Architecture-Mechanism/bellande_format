@@ -15,7 +15,7 @@
 
 #!/usr/bin/env python3
 
-import re
+import re, sys, json
 from typing import Dict, List, Union, Any
 
 class Bellande_Format:
@@ -141,3 +141,68 @@ class Bellande_Format:
             return 'null'
         else:
             return str(value)
+
+    def main(self) -> int:
+        """
+        Main method to handle command-line operations.
+        Returns an integer exit code.
+        """
+        if len(sys.argv) < 2:
+            print("Usage: Bellande_Format <command> [<file_path>] [<input_data>]")
+            print("Commands: parse <file_path>, write <file_path> <input_data>, help")
+            return 1
+
+        command = sys.argv[1]
+
+        try:
+            if command == 'parse':
+                if len(sys.argv) < 3:
+                    print("Error: Please provide a file path to parse.")
+                    return 1
+                file_path = sys.argv[2]
+                result = self.parse_bellande(file_path)
+                print(result)
+                return 0
+
+            elif command == 'write':
+                if len(sys.argv) < 4:
+                    print("Error: Please provide a file path to write to and the input data.")
+                    return 1
+                file_path = sys.argv[2]
+                input_data = sys.argv[3]
+                
+                try:
+                    data = json.loads(input_data)
+                except json.JSONDecodeError:
+                    print("Error: Invalid JSON input. Please provide valid JSON data.")
+                    return 1
+
+                self.write_bellande(data, file_path)
+                print(f"Data successfully written to {file_path}")
+                return 0
+
+            elif command == 'help':
+                print("Bellande_Format Usage:")
+                print("  parse <file_path>: Parse a Bellande format file and print the result")
+                print("  write <file_path> <input_data>: Write data in Bellande format to a file")
+                print("    <input_data> should be a valid JSON string")
+                print("  help: Display this help message")
+                return 0
+
+            else:
+                print(f"Unknown command: {command}")
+                print("Use 'Bellande_Format help' for usage information.")
+                return 1
+
+        except Exception as e:
+            print(f"An error occurred: {e}", file=sys.stderr)
+            return 1
+
+def main():
+    """
+    Function to be used as the entry point in setup.py
+    """
+    return Bellande_Format().main()
+
+if __name__ == "__main__":
+    sys.exit(main())
