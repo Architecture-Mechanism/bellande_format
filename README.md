@@ -59,3 +59,7 @@ projects:
 
 ## License
 This Algorithm or Models is distributed under the [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/), see [LICENSE](https://github.com/RonaldsonBellande/bellande_format/blob/main/LICENSE) and [NOTICE](https://github.com/RonaldsonBellande/bellande_format/blob/main/LICENSE) for more information.
+
+
+## Code of Conduct
+Bellande Format is distributed under the [CODE_OF_CONDUCT](https://github.com/Architecture-Mechanism/bellande_format/blob/main/CODE_OF_CONDUCT.md) and [NOTICE](https://github.com/Architecture-Mechanism/bellande_format/blob/main/CODE_OF_CONDUCT.md) for more information.
