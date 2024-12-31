@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Bellande Algorithm Model Research Innovation Center, Ronaldson Bellande
+# Copyright (C) 2024 Bellande Architecture Mechanism Research Innovation Center, Ronaldson Bellande
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,15 +15,40 @@
 
 #!/usr/bin/env python3
 
-import re, sys, json
-from typing import Dict, List, Union, Any
+from typing import Dict, List, Any, Union
+from .core.types import BellandeValue, ValidationResult, SchemaDefinition
+from .core.encryption import Encryption
+from .core.compression import Compression
+from .core.custom_types import CustomTypeRegistry
+from .core.validation import Validator
+import re
+import json
 
 class Bellande_Format:
-    def parse_bellande(self, file_path: str) -> str:
-        with open(file_path, 'r') as file:
-            lines = file.readlines()
-        parsed_data = self.parse_lines(lines)
-        return self.to_string_representation(parsed_data)
+    def __init__(self):
+        self.encryption = Encryption()
+        self.compression = Compression()
+        self.type_registry = CustomTypeRegistry()
+        self.validator = Validator()
+        self.references: Dict[str, Any] = {}
+        self.schemas: Dict[str, SchemaDefinition] = {}
+
+    def register_schema(self, name: str, schema: SchemaDefinition):
+        self.schemas[name] = schema
+
+    def validate(self, data: Any, schema_name: str) -> ValidationResult:
+        if schema_name not in self.schemas:
+            raise ValueError(f"Schema {schema_name} not found")
+        return self.validator.validate(data, self.schemas[schema_name])
+
+    def parse_bellande(self, file_path: str) -> Any:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+        return self.parse_content(content)
+
+    def parse_content(self, content: str) -> Any:
+        lines = content.split('\n')
+        return self.parse_lines(lines)
 
     def parse_lines(self, lines: List[str]) -> Union[Dict, List]:
         result = {}
@@ -31,45 +56,56 @@ class Bellande_Format:
         current_list = None
         indent_stack = [(-1, result)]
 
-        for line in lines:
-            stripped = line.strip()
-            if not stripped or stripped.startswith('#'):
-                continue
+        for line_num, line in enumerate(lines, 1):
+            try:
+                stripped = line.strip()
+                if not stripped or stripped.startswith('#'):
+                    continue
 
-            indent = len(line) - len(line.lstrip())
+                indent = len(line) - len(line.lstrip())
 
-            while indent_stack and indent <= indent_stack[-1][0]:
-                popped = indent_stack.pop()
-                if isinstance(popped[1], list):
-                    current_list = None
+                while indent_stack and indent <= indent_stack[-1][0]:
+                    popped = indent_stack.pop()
+                    if isinstance(popped[1], list):
+                        current_list = None
 
-            if ':' in stripped:
-                key, value = map(str.strip, stripped.split(':', 1))
-                current_key = key
-                if value:
-                    result[key] = self.parse_value(value)
-                else:
-                    result[key] = []
-                    current_list = result[key]
-                    indent_stack.append((indent, current_list))
-            elif stripped.startswith('-'):
-                value = stripped[1:].strip()
-                parsed_value = self.parse_value(value)
-                if current_list is not None:
-                    current_list.append(parsed_value)
-                else:
-                    if not result:  # If result is empty, start a root-level list
-                        result = [parsed_value]
-                        current_list = result
-                        indent_stack = [(-1, result)]
+                if ':' in stripped:
+                    key, value = map(str.strip, stripped.split(':', 1))
+                    current_key = key
+                    if value:
+                        result[key] = self._process_value(value)
                     else:
-                        result[current_key] = [parsed_value]
-                        current_list = result[current_key]
+                        result[key] = []
+                        current_list = result[key]
                         indent_stack.append((indent, current_list))
+                elif stripped.startswith('-'):
+                    value = stripped[1:].strip()
+                    parsed_value = self._process_value(value)
+                    if current_list is not None:
+                        current_list.append(parsed_value)
+                    else:
+                        if not result:
+                            result = [parsed_value]
+                            current_list = result
+                            indent_stack = [(-1, result)]
+                        else:
+                            result[current_key] = [parsed_value]
+                            current_list = result[current_key]
+                            indent_stack.append((indent, current_list))
+
+            except Exception as e:
+                raise ValueError(f"Error parsing line {line_num}: {str(e)}")
 
         return result
 
-    def parse_value(self, value: str) -> Union[str, int, float, bool, None]:
+    def _process_value(self, value: str) -> Any:
+        # Process custom types
+        for type_name, deserializer in self.type_registry.deserializers.items():
+            if value.startswith(f"type:{type_name}:"):
+                type_value = value[len(f"type:{type_name}:"):]
+                return deserializer(type_value)
+
+        # Process standard types
         if value.lower() == 'true':
             return True
         elif value.lower() == 'false':
@@ -78,35 +114,23 @@ class Bellande_Format:
             return None
         elif value.startswith('"') and value.endswith('"'):
             return value[1:-1]
+        elif value.startswith('ref:'):
+            ref_key = value[4:].strip()
+            if ref_key not in self.references:
+                raise ValueError(f"Reference not found: {ref_key}")
+            return self.references[ref_key]
         elif re.match(r'^-?\d+$', value):
             return int(value)
         elif re.match(r'^-?\d*\.\d+$', value):
             return float(value)
-        else:
-            return value
-
-    def to_string_representation(self, data: Any) -> str:
-        if isinstance(data, dict):
-            items = [f'"{k}": {self.to_string_representation(v)}' for k, v in data.items()]
-            return '{' + ', '.join(items) + '}'
-        elif isinstance(data, list):
-            items = [self.to_string_representation(item) for item in data]
-            return '[' + ', '.join(items) + ']'
-        elif isinstance(data, str):
-            return f'"{data}"'
-        elif isinstance(data, (int, float)):
-            return str(data)
-        elif data is None:
-            return 'null'
-        elif isinstance(data, bool):
-            return str(data).lower()
-        else:
-            return str(data)
+        
+        return value
 
     def write_bellande(self, data: Any, file_path: str):
-        with open(file_path, 'w') as file:
-            file.write(self.to_bellande_string(data))
-    
+        content = self.to_bellande_string(data)
+        with open(file_path, 'w', encoding='utf-8') as file:
+            file.write(content)
+
     def to_bellande_string(self, data: Any, indent: int = 0) -> str:
         if isinstance(data, dict):
             lines = []
@@ -115,7 +139,7 @@ class Bellande_Format:
                     lines.append(f"{' ' * indent}{key}:")
                     lines.append(self.to_bellande_string(value, indent + 2))
                 else:
-                    lines.append(f"{' ' * indent}{key}: {self.format_value(value)}")
+                    lines.append(f"{' ' * indent}{key}: {self._format_value(value)}")
             return '\n'.join(lines)
         elif isinstance(data, list):
             lines = []
@@ -125,12 +149,21 @@ class Bellande_Format:
                     lines.append(f"{' ' * indent}- {dict_lines[0]}")
                     lines.extend(dict_lines[1:])
                 else:
-                    lines.append(f"{' ' * indent}- {self.format_value(item)}")
+                    lines.append(f"{' ' * indent}- {self._format_value(item)}")
             return '\n'.join(lines)
         else:
-            return f"{' ' * indent}{self.format_value(data)}"
+            return f"{' ' * indent}{self._format_value(data)}"
 
-    def format_value(self, value: Any) -> str:
+    def _format_value(self, value: Any) -> str:
+        # Format custom types
+        for type_name, serializer in self.type_registry.serializers.items():
+            try:
+                if isinstance(value, self.type_registry.types[type_name]):
+                    return f"type:{type_name}:{serializer(value)}"
+            except:
+                continue
+
+        # Format standard types
         if isinstance(value, str):
             if ' ' in value or ':' in value or value.lower() in ['true', 'false', 'null']:
                 return f'"{value}"'
@@ -139,70 +172,60 @@ class Bellande_Format:
             return str(value).lower()
         elif value is None:
             return 'null'
-        else:
-            return str(value)
+        
+        return str(value)
 
-    def main(self) -> int:
-        """
-        Main method to handle command-line operations.
-        Returns an integer exit code.
-        """
-        if len(sys.argv) < 2:
-            print("Usage: Bellande_Format <command> [<file_path>] [<input_data>]")
-            print("Commands: parse <file_path>, write <file_path> <input_data>, help")
-            return 1
+    def encrypt(self, data: Any, key: bytes) -> bytes:
+        content = self.to_bellande_string(data)
+        return self.encryption.encrypt(content.encode(), key)
 
-        command = sys.argv[1]
+    def decrypt(self, encrypted_data: bytes, key: bytes) -> Any:
+        decrypted = self.encryption.decrypt(encrypted_data, key)
+        return self.parse_content(decrypted.decode())
 
-        try:
-            if command == 'parse':
-                if len(sys.argv) < 3:
-                    print("Error: Please provide a file path to parse.")
-                    return 1
-                file_path = sys.argv[2]
-                result = self.parse_bellande(file_path)
-                print(result)
-                return 0
+    def compress(self, data: Any) -> bytes:
+        content = self.to_bellande_string(data)
+        return self.compression.encode_data(content.encode())[0]
 
-            elif command == 'write':
-                if len(sys.argv) < 4:
-                    print("Error: Please provide a file path to write to and the input data.")
-                    return 1
-                file_path = sys.argv[2]
-                input_data = sys.argv[3]
-                
-                try:
-                    data = json.loads(input_data)
-                except json.JSONDecodeError:
-                    print("Error: Invalid JSON input. Please provide valid JSON data.")
-                    return 1
-
-                self.write_bellande(data, file_path)
-                print(f"Data successfully written to {file_path}")
-                return 0
-
-            elif command == 'help':
-                print("Bellande_Format Usage:")
-                print("  parse <file_path>: Parse a Bellande format file and print the result")
-                print("  write <file_path> <input_data>: Write data in Bellande format to a file")
-                print("    <input_data> should be a valid JSON string")
-                print("  help: Display this help message")
-                return 0
-
-            else:
-                print(f"Unknown command: {command}")
-                print("Use 'Bellande_Format help' for usage information.")
-                return 1
-
-        except Exception as e:
-            print(f"An error occurred: {e}", file=sys.stderr)
-            return 1
+    def decompress(self, compressed_data: bytes) -> Any:
+        decompressed = self.compression.decode_data(compressed_data, {})
+        return self.parse_content(decompressed.decode())
 
 def main():
-    """
-    Function to be used as the entry point in setup.py
-    """
-    return Bellande_Format().main()
+    import sys
+    
+    if len(sys.argv) < 2:
+        print("Usage: bellande_format <command> [<file_path>] [<input_data>]")
+        return 1
+
+    formatter = Bellande_Format()
+    command = sys.argv[1]
+
+    try:
+        if command == 'parse':
+            if len(sys.argv) < 3:
+                print("Error: Please provide a file path to parse.")
+                return 1
+            result = formatter.parse_bellande(sys.argv[2])
+            print(json.dumps(result, default=str))
+            return 0
+
+        elif command == 'write':
+            if len(sys.argv) < 4:
+                print("Error: Please provide a file path and input data.")
+                return 1
+            data = json.loads(sys.argv[3])
+            formatter.write_bellande(data, sys.argv[2])
+            print(f"Data written to {sys.argv[2]}")
+            return 0
+
+        else:
+            print(f"Unknown command: {command}")
+            return 1
+
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
 
 if __name__ == "__main__":
     sys.exit(main())
