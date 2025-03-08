@@ -15,13 +15,10 @@
 
 #!/usr/bin/env python3
 
-from typing import Dict, Any, Callable, Type
+from typing import Dict, Callable, Type
 import re
 from datetime import datetime, timedelta
-from decimal import Decimal
-from pathlib import Path
 import base64
-import struct
 
 class CustomTypeRegistry:
     def __init__(self):

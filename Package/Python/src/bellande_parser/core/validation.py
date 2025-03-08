@@ -15,9 +15,8 @@
 
 #!/usr/bin/env python3
 
-from typing import Dict, Any, List
+from typing import Any
 import re
-from datetime import datetime
 from decimal import Decimal
 from .types import SchemaDefinition, ValidationResult
 
