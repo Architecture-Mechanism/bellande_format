@@ -16,7 +16,7 @@
 #!/usr/bin/env python3
 
 from typing import Dict, List, Any, Union
-from .core.types import BellandeValue, ValidationResult, SchemaDefinition
+from .core.types import ValidationResult, SchemaDefinition
 from .core.encryption import Encryption
 from .core.compression import Compression
 from .core.custom_types import CustomTypeRegistry
